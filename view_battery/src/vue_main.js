@@ -35,6 +35,7 @@ var setupOnLoad = function(){
 	// Cookieならこっち。後半でテスト済み。https://www.npmjs.com/package/tiny-cookie
 	var createVue = factoryImpl.createVue.getInstance();
 	var items = factoryImpl.cookieData.getInstance().loadItems();
+	var last_value = factoryImpl.cookieData.getInstance().loadLastValue();
 	var app = createVue({
 		el: '#app',
 		data: function(){
@@ -59,7 +60,7 @@ var setupOnLoad = function(){
 		data: function(){
 			return {
 			// 以下はセレクター関連
-			"selected" : "", // ここは初期選択したいvalueを指定する。
+			"selected" : last_value ? last_value : "", // ここは初期選択したいvalueを指定する。
 			"options" : items
 			};
 		},
@@ -72,6 +73,9 @@ var setupOnLoad = function(){
 			}
 		}
 	});
+	if( last_value ){
+		factoryImpl.action.getInstance().showItemOnInputer( app2, app ); // 後でマージする。⇒this１つになる。
+	}
 };
 var _addSelecterIfUnique = function( src, dest ){
 	var list = dest.options, n = list.length, is_unique = true;
@@ -101,6 +105,7 @@ var _showItemOnInputer = function( src, dest ){
 };
 var _updateLogViewer = function( src ){
 	updateChart( "#id_result", src.azure_domain_str, src.device_key_str ) // 出力先がハードコーディングなので後で直す。
+	factoryImpl.cookieData.getInstance().saveLastValue( src.device_key_str )
 };
 if( this.window ){
 	window.onload = setupOnLoad;
