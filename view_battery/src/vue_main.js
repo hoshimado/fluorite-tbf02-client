@@ -106,6 +106,9 @@ var _showItemOnInputer = function( src, dest ){
 var _updateLogViewer = function( src ){
 	updateChart( "#id_result", src.azure_domain_str, src.device_key_str ) // 出力先がハードコーディングなので後で直す。
 	factoryImpl.cookieData.getInstance().saveLastValue( src.device_key_str )
+
+	// ドメインとデバイスキーリストのCookie保存を更新しておく。
+	factoryImpl.cookieData.getInstance().extendExpiresOfAllCookie();
 };
 if( this.window ){
 	window.onload = setupOnLoad;
@@ -183,7 +186,12 @@ var _saveAzureDomain = function( azureStr ){
 	cookie("AzBatteryLog_Domain", azureStr, COOKIE_OPTIONS );
 };
 
-
+var _extendExpiresOfAllCookie = function(){
+	var items = factoryImpl.cookieData.getInstance().loadItems();
+	var domain = factoryImpl.cookieData.getInstance().loadAzureDomain();
+	factoryImpl.cookieData.getInstance().saveItems( items );
+	factoryImpl.cookieData.getInstance().saveAzureDomain( domain );
+};
 
 
 
@@ -195,6 +203,7 @@ var factoryImpl = { // require()を使う代わりに、new Factory() する。
 		return new Vue(options)
 	}), // Vue.jsが無ければ、undefined が設定されるだけ。
 	"cookieData" : new Factory({
+		"extendExpiresOfAllCookie" : "_extendExpiresOfAllCookie",
 		"loadItems" : _loadItems,
 		"saveItems" : _saveItems,
 		"loadLastValue" : _loadLastValue,
