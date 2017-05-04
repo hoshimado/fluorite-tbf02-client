@@ -43,8 +43,8 @@ describe( "vue_main.js", function(){
                     // var updateChart = function( RESULT_SELECTOR, azure_domain, device_key ){}
                 }
             };
-            main.factoryImpl.createVue.setStub( stubs.createVue );
-            main.factoryImpl.cookieData.setStub( stubs.cookieData);
+            main.factoryImpl.createVue.setStub(stubs.createVue);
+            main.factoryImpl.cookieData.setStub(stubs.cookieData);
             main.factoryImpl.action.setStub(stubs.action);
         });
         afterEach(function(){
@@ -55,7 +55,8 @@ describe( "vue_main.js", function(){
 
         it("正常系 - lastValueあり",function(){
             var EX_AZURE_DOMAIN = "AzD";
-            var EX_VUE1 = {}, EX_VUE2 = {"options": [] };
+            var EX_VUE1 = {"azure_domain_str" : EX_AZURE_DOMAIN };
+            var EX_VUE2 = {"options": [] };
             var EX_ITEMS = [{"text":"1つめテキスト", "value":"1つ目の値"}];
             var EX_LAST_VALUE = "last_value___";
 
@@ -112,8 +113,11 @@ describe( "vue_main.js", function(){
 
             expect(app2.methods).to.have.property("update_chart");
             expect(!stubs.action.updateLogViewer.called);
-            app2.methods.update_chart(app2); // 内部でthisを参照する必要はないので、そのまま呼ぶ。
+            app2.methods.update_chart.apply(app2_data,[]);
+            expect(stubs.cookieData.saveAzureDomain.calledWith(EX_VUE1.azure_domain_str));
+            expect(stubs.cookieData.saveItems.calledWith(EX_VUE2.options));
             assert(stubs.action.updateLogViewer.calledWith(EX_VUE1));
+
         });
 
         it("正常系 - lastValue無し",function(){
@@ -164,7 +168,6 @@ describe( "vue_main.js", function(){
             var stub = {
                 "cookieData" : {
                     "saveLastValue" : sinon.stub(),
-                    "extendExpiresOfAllCookie" : sinon.stub()
                 },
                 "action" : {
                     "updateChart" : sinon.stub()
@@ -187,8 +190,6 @@ describe( "vue_main.js", function(){
 
             assert(stub.cookieData.saveLastValue.calledOnce);
             expect(stub.cookieData.saveLastValue.getCall(0).args[0]).to.equal(EX_DEVICE_KEY);
-
-            assert(stub.cookieData.extendExpiresOfAllCookie.calledOnce);
         });
     });
 

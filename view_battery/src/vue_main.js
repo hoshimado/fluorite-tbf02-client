@@ -70,6 +70,11 @@ var setupOnLoad = function(){
 				factoryImpl.action.getInstance().showItemOnInputer( this, app ); // 後でマージする。⇒this１つになる。
 			},
 			"update_chart" : function(e){
+				// ドメインと選択肢を、この時点の値を以て保存し直する。
+				factoryImpl.cookieData.getInstance().saveAzureDomain( app.azure_domain_str );
+				factoryImpl.cookieData.getInstance().saveItems( this.options );
+
+				// チャート描画を呼び出す。
 				factoryImpl.action.getInstance().updateLogViewer( app ); // 後でマージする。⇒thisになる。
 			}
 		}
@@ -107,9 +112,6 @@ var _showItemOnInputer = function( src, dest ){
 var _updateLogViewer = function( src ){
 	factoryImpl.action.getInstance().updateChart( "#id_result", src.azure_domain_str, src.device_key_str ) // 出力先がハードコーディングなので後で直す。
 	factoryImpl.cookieData.getInstance().saveLastValue( src.device_key_str )
-
-	// ドメインとデバイスキーリストのCookie保存を更新しておく。
-	factoryImpl.cookieData.getInstance().extendExpiresOfAllCookie();
 };
 if( this.window ){
 	window.onload = setupOnLoad;
@@ -187,12 +189,6 @@ var _saveAzureDomain = function( azureStr ){
 	cookie("AzBatteryLog_Domain", azureStr, COOKIE_OPTIONS );
 };
 
-var _extendExpiresOfAllCookie = function(){
-	var items = factoryImpl.cookieData.getInstance().loadItems();
-	var domain = factoryImpl.cookieData.getInstance().loadAzureDomain();
-	factoryImpl.cookieData.getInstance().saveItems( items );
-	factoryImpl.cookieData.getInstance().saveAzureDomain( domain );
-};
 
 
 
@@ -204,7 +200,6 @@ var factoryImpl = { // require()を使う代わりに、new Factory() する。
 		return new Vue(options)
 	}), // Vue.jsが無ければ、undefined が設定されるだけ。
 	"cookieData" : new Factory({
-		"extendExpiresOfAllCookie" : "_extendExpiresOfAllCookie",
 		"loadItems" : _loadItems,
 		"saveItems" : _saveItems,
 		"loadLastValue" : _loadLastValue,
