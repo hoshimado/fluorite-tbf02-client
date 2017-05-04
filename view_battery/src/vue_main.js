@@ -40,6 +40,7 @@ var setupOnLoad = function(){
 		el: '#app',
 		data: function(){
 			return {
+			"app_version_str"  : "Ver.20170504",
 			"azure_domain_str" : factoryImpl.cookieData.getInstance().loadAzureDomain(),
 			"device_key_str"   : "",
 			"device_name_str"  : ""
@@ -104,7 +105,7 @@ var _showItemOnInputer = function( src, dest ){
 	}
 };
 var _updateLogViewer = function( src ){
-	updateChart( "#id_result", src.azure_domain_str, src.device_key_str ) // 出力先がハードコーディングなので後で直す。
+	factoryImpl.action.getInstance().updateChart( "#id_result", src.azure_domain_str, src.device_key_str ) // 出力先がハードコーディングなので後で直す。
 	factoryImpl.cookieData.getInstance().saveLastValue( src.device_key_str )
 
 	// ドメインとデバイスキーリストのCookie保存を更新しておく。

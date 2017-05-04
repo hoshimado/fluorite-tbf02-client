@@ -14,29 +14,18 @@ var sinon = require("sinon");
 var main = require("../src/vue_main.js");
 
 
-
 describe( "vue_main.js", function(){
     describe( "::setupOnLoad()",function(){
         var setupOnLoad = main.setupOnLoad;
-        var original;
+        var original, stubs;
         beforeEach(function(){
             original = {
                 "createVue" : main.factoryImpl.createVue.getInstance(),
                 "cookieData" : main.factoryImpl.cookieData.getInstance(),
                 "action" : main.factoryImpl.action.getInstance()
             };
-        });
-        afterEach(function(){
-            main.factoryImpl.createVue.setStub( original.createVue );
-            main.factoryImpl.cookieData.setStub( original.cookieData );
-            main.factoryImpl.action.setStub( original.action );
-        });
 
-        it("正常系",function(){
-            var EX_AZURE_DOMAIN = "AzD";
-            var EX_VUE1 = {}, EX_VUE2 = {"options": [] };
-
-            var stub = {
+            stubs = {
                 "createVue" : sinon.stub(),
                 "cookieData" : {
                     "loadItems" : sinon.stub(),
@@ -54,24 +43,39 @@ describe( "vue_main.js", function(){
                     // var updateChart = function( RESULT_SELECTOR, azure_domain, device_key ){}
                 }
             };
-            main.factoryImpl.createVue.setStub( stub.createVue );
-            main.factoryImpl.cookieData.setStub( stub.cookieData);
-            main.factoryImpl.action.setStub(stub.action);
+            main.factoryImpl.createVue.setStub( stubs.createVue );
+            main.factoryImpl.cookieData.setStub( stubs.cookieData);
+            main.factoryImpl.action.setStub(stubs.action);
+        });
+        afterEach(function(){
+            main.factoryImpl.createVue.setStub( original.createVue );
+            main.factoryImpl.cookieData.setStub( original.cookieData );
+            main.factoryImpl.action.setStub( original.action );
+        });
 
-            stub.createVue.onCall(0).returns(EX_VUE1);
-            stub.createVue.onCall(1).returns(EX_VUE2);
-            stub.cookieData.loadAzureDomain.onCall(0).returns(EX_AZURE_DOMAIN);
+        it("正常系 - lastValueあり",function(){
+            var EX_AZURE_DOMAIN = "AzD";
+            var EX_VUE1 = {}, EX_VUE2 = {"options": [] };
+            var EX_ITEMS = [{"text":"1つめテキスト", "value":"1つ目の値"}];
+            var EX_LAST_VALUE = "last_value___";
+
+            stubs.createVue.onCall(0).returns(EX_VUE1);
+            stubs.createVue.onCall(1).returns(EX_VUE2);
+            stubs.cookieData.loadAzureDomain.onCall(0).returns(EX_AZURE_DOMAIN);
+            stubs.cookieData.loadItems.onCall(0).returns(EX_ITEMS);
+            stubs.cookieData.loadLastValue.onCall(0).returns(EX_LAST_VALUE);
 
             main.setupOnLoad();
 
             // 以下、検証。変数宣言位置は無視。
-            assert( stub.createVue.calledTwice, "crateVueは2買い呼ばれること" );
+            assert( stubs.createVue.calledTwice, "crateVueは2回呼ばれること" );
 
-            var app1 = stub.createVue.getCall(0).args[0]; // 【FixMe】初回である必要はない。
+            var app1 = stubs.createVue.getCall(0).args[0]; // 【FixMe】初回である必要はない。
             expect(app1).to.have.property("el").and.equal("#app");
 
             expect(app1).to.have.property("data");
             var app1_data = app1.data();
+            expect(app1_data).to.have.property("app_version_str");
             expect(app1_data).to.have.property("azure_domain_str").and.equal(EX_AZURE_DOMAIN);
             expect(app1_data).to.have.property("device_key_str").and.equal("");
             expect(app1_data).to.have.property("device_name_str").and.equal("");
@@ -79,51 +83,113 @@ describe( "vue_main.js", function(){
             expect(app1).to.have.property("methods");
 
             expect(app1.methods).to.have.property("add_azure");
-            expect(stub.cookieData.saveAzureDomain.neverCalledWith());
-            app1.methods.add_azure();
-            expect(stub.cookieData.saveAzureDomain.calledWith(EX_AZURE_DOMAIN));
+            expect(!stubs.cookieData.saveAzureDomain.called);
+            app1.methods.add_azure.apply(app1_data,[]);
+            assert(stubs.cookieData.saveAzureDomain.calledWith(EX_AZURE_DOMAIN));
 
             expect(app1.methods).to.have.property("add_device");
-            expect(stub.action.addSelecterIfUnique.neverCalledWith());
-            expect(stub.cookieData.saveItems.neverCalledWith());
+            expect(!stubs.action.addSelecterIfUnique.called);
+            expect(stubs.cookieData.saveItems.neverCalledWith());
+            app1.methods.add_device.apply(app1);
+            assert(stubs.action.addSelecterIfUnique.calledWith(app1, EX_VUE2));
 
-            //app1.methods.add_device();
+
+            var app2 = stubs.createVue.getCall(1).args[0]; // 【FixMe】2回目である必要はない。
+            expect(app2).to.have.property("el").and.equal("#app_selector");
+
+            expect(app2).to.have.property("data");
+            var app2_data = app2.data();
+            expect(app2_data).to.have.property("selected").and.equal(EX_LAST_VALUE);
+            expect(app2_data).to.have.property("options").and.equal(EX_ITEMS);
+
+            assert(stubs.action.showItemOnInputer.calledWith(EX_VUE2, EX_VUE1));
+
+            expect(app2).to.have.property("methods");
+            expect(app2.methods).to.have.property("update_inputer");
+            expect(stubs.action.showItemOnInputer.neverCalledWith(app2_data, EX_VUE1)); // 別の引数組み合わせで１ど呼ばれるので注意。
+            app2.methods.update_inputer.apply(app2_data,[]);
+            assert(stubs.action.showItemOnInputer.calledWith(app2_data, EX_VUE1));
+
+            expect(app2.methods).to.have.property("update_chart");
+            expect(!stubs.action.updateLogViewer.called);
+            app2.methods.update_chart(app2); // 内部でthisを参照する必要はないので、そのまま呼ぶ。
+            assert(stubs.action.updateLogViewer.calledWith(EX_VUE1));
+        });
+
+        it("正常系 - lastValue無し",function(){
+            var EX_AZURE_DOMAIN = "AzD";
+            var EX_VUE1 = {}, EX_VUE2 = {"options": [] };
+            var EX_ITEMS = [{"text":"1つめテキスト", "value":"1つ目の値"}];
+
+            stubs.createVue.onCall(0).returns(EX_VUE1);
+            stubs.createVue.onCall(1).returns(EX_VUE2);
+            stubs.cookieData.loadAzureDomain.onCall(0).returns(EX_AZURE_DOMAIN);
+            stubs.cookieData.loadItems.onCall(0).returns(EX_ITEMS);
+            stubs.cookieData.loadLastValue.onCall(0).returns(null);
+
+            main.setupOnLoad();
+
+            // 以下、検証。変数宣言位置は無視。
+            assert( stubs.createVue.calledTwice, "crateVueは2回呼ばれること" );
+
+            var app2 = stubs.createVue.getCall(1).args[0]; // 【FixMe】2回目である必要はない。
+            expect(app2).to.have.property("el").and.equal("#app_selector");
+            // 他のテストは重複なので省略。
+            var app2_data = app2.data();
+            expect(app2_data).to.have.property("selected").and.equal(""); // 【ToDo】無い場合のテストも必要。
+            expect(app2_data).to.have.property("options").and.equal(EX_ITEMS);
+
+            assert(!stubs.action.showItemOnInputer.called); // このケースでは「呼ばれ無い」。
+        });
+    });
+
+    describe( "::_updateLogViewer()",function(){
+        var updateLogViewer = main.factoryImpl.action.getInstance().updateLogViewer;
+        var original;
+        beforeEach(function(){
+            original = {
+                "cookieData" : main.factoryImpl.cookieData.getInstance(),
+                "action" : main.factoryImpl.action.getInstance()
+            };
+        });
+        afterEach(function(){
+            main.factoryImpl.cookieData.setStub( original.cookieData );
+            main.factoryImpl.action.setStub( original.action );
+        });
+
+        it("正常系",function(){
+            var EX_AZURE_DOMAIN = "AzD";
+            var EX_DEVICE_KEY = "device_key___";
+
+            var stub = {
+                "cookieData" : {
+                    "saveLastValue" : sinon.stub(),
+                    "extendExpiresOfAllCookie" : sinon.stub()
+                },
+                "action" : {
+                    "updateChart" : sinon.stub()
+                    // var updateChart = function( RESULT_SELECTOR, azure_domain, device_key ){}
+                }
+            };
+            main.factoryImpl.cookieData.setStub(stub.cookieData);
+            main.factoryImpl.action.setStub(stub.action);
+
+            updateLogViewer({//src
+                "azure_domain_str" : EX_AZURE_DOMAIN,
+                "device_key_str" : EX_DEVICE_KEY
+            });
+
+            // 以下、検証。変数宣言位置は無視。
+            assert(stub.action.updateChart.calledOnce);
+            expect(stub.action.updateChart.getCall(0).args[0]).to.equal("#id_result");
+            expect(stub.action.updateChart.getCall(0).args[1]).to.equal(EX_AZURE_DOMAIN);
+            expect(stub.action.updateChart.getCall(0).args[2]).to.equal(EX_DEVICE_KEY);
+
+            assert(stub.cookieData.saveLastValue.calledOnce);
+            expect(stub.cookieData.saveLastValue.getCall(0).args[0]).to.equal(EX_DEVICE_KEY);
+
+            assert(stub.cookieData.extendExpiresOfAllCookie.calledOnce);
         });
     });
 });
 
-
-/*
-
-var app = createVue({
-    methods : {
-        "add_device" : function(e){
-            factoryImpl.action.getInstance().addSelecterIfUnique( this, app2 ); // 後でマージする。⇒this１つになる。
-            factoryImpl.cookieData.getInstance().saveItems( app2.options ); // 後でマージする。⇒this.optionsになる。
-        }
-    }
-});
-
-
-var app2 = createVue({ // jQueryとの共存の都合で分ける。
-    el: '#app_selector',
-    data: function(){
-        return {
-        // 以下はセレクター関連
-        "selected" : last_value ? last_value : "", // ここは初期選択したいvalueを指定する。
-        "options" : items
-        };
-    },
-    methods : {
-        "update_inputer" : function(e){
-            factoryImpl.action.getInstance().showItemOnInputer( this, app ); // 後でマージする。⇒this１つになる。
-        },
-        "update_chart" : function(e){
-            factoryImpl.action.getInstance().updateLogViewer( app ); // 後でマージする。⇒thisになる。
-        }
-    }
-});
-if( last_value ){
-    factoryImpl.action.getInstance().showItemOnInputer( app2, app ); // 後でマージする。⇒this１つになる。
-}
-*/
