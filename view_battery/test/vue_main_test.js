@@ -191,5 +191,100 @@ describe( "vue_main.js", function(){
             assert(stub.cookieData.extendExpiresOfAllCookie.calledOnce);
         });
     });
+
+
+    describe( "::_addSelecterIfUnique()",function(){
+        var addSelecterIfUnique = main.factoryImpl.action.getInstance().addSelecterIfUnique;
+        var original;
+        beforeEach(function(){
+        });
+        afterEach(function(){
+        });
+
+
+var _addSelecterIfUnique = function( src, dest ){
+	var list = dest.options, n = list.length, is_unique = true;
+	while( 0<n-- ){
+		if( list[n].value == src.device_key_str ){
+			is_unique = false;
+			break;
+		}
+	}
+	if( is_unique ){
+		dest.options.push({
+			value : src.device_key_str,
+			text  : src.device_name_str
+		});
+	}
+};
+
+        it("新規挿入",function(){
+            var src = {
+                "device_key_str" : "fugafuga",
+                "device_name_str" : "新規名称"
+            };
+            var dest = {
+                "options" :
+                [
+                    {"value" : "hoge",     "text": "ほげ"},
+                    {"value" : "fuga",     "text": "フガ"},
+                    {"value" : "piyo",     "text": "ぴよ"}
+                ]
+            };
+            var base_array = [].concat( dest.options );
+
+            addSelecterIfUnique( src, dest );
+
+            // 以下、検証。
+            expect(dest.options).to.include({"value":src.device_key_str, "text":src.device_name_str});
+        });
+        it("既存なので変化しない",function(){
+            var src = {
+                "device_key_str" : "fugafuga",
+                "device_name_str" : "新規名称"
+            };
+            var dest = {
+                "options" :
+                [
+                    {"value" : "hoge",     "text": "ほげ"},
+                    {"value" : "fuga",     "text": "フガ"},
+                    {"value" : "fugafuga", "text": "ふがふが"},
+                    {"value" : "piyo",     "text": "ぴよ"}
+                ]
+            };
+            var base_array = [].concat( dest.options ); // シャローコピー
+
+            addSelecterIfUnique( src, dest );
+            expect(dest.options).to.deep.equal(base_array, "真ん中に既存");
+
+
+            dest = {
+                "options" :
+                [
+                    {"value" : "fugafuga", "text": "ふがふが"},
+                    {"value" : "hoge",     "text": "ほげ"},
+                    {"value" : "fuga",     "text": "フガ"},
+                    {"value" : "piyo",     "text": "ぴよ"}
+                ]
+            };
+            base_array = [].concat( dest.options );
+            addSelecterIfUnique( src, dest );
+            expect(dest.options).to.deep.equal(base_array, "先頭に既存");
+
+
+            dest = {
+                "options" :
+                [
+                    {"value" : "hoge",     "text": "ほげ"},
+                    {"value" : "fuga",     "text": "フガ"},
+                    {"value" : "piyo",     "text": "ぴよ"},
+                    {"value" : "fugafuga", "text": "ふがふが"}
+                ]
+            };
+            base_array = [].concat( dest.options );
+            addSelecterIfUnique( src, dest );
+            expect(dest.options).to.deep.equal(base_array, "終端に既存");
+        });
+    });    
 });
 
