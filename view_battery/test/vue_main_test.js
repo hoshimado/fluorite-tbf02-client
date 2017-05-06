@@ -4,6 +4,7 @@
 */
 
 
+
 var chai = require("chai");
 var assert = chai.assert;
 var expect = chai.expect;
@@ -53,7 +54,7 @@ describe( "vue_main.js", function(){
             main.factoryImpl.action.setStub( original.action );
         });
 
-        it("正常系 - lastValueあり",function(){
+        it("インスタンスx2構築 - lastValueあり",function(){
             var EX_AZURE_DOMAIN = "AzD";
             var EX_VUE1 = {"azure_domain_str" : EX_AZURE_DOMAIN };
             var EX_VUE2 = {"options": [] };
@@ -84,15 +85,19 @@ describe( "vue_main.js", function(){
             expect(app1).to.have.property("methods");
 
             expect(app1.methods).to.have.property("add_azure");
-            expect(!stubs.cookieData.saveAzureDomain.called);
+            assert(!stubs.cookieData.saveAzureDomain.called, "インスタンス構築時点はsaveAzureDomein()は呼ばれない事。");
             app1.methods.add_azure.apply(app1_data,[]);
             assert(stubs.cookieData.saveAzureDomain.calledWith(EX_AZURE_DOMAIN));
+            stubs.cookieData.saveAzureDomain.reset();
 
             expect(app1.methods).to.have.property("add_device");
-            expect(!stubs.action.addSelecterIfUnique.called);
-            expect(stubs.cookieData.saveItems.neverCalledWith());
+            assert(!stubs.action.addSelecterIfUnique.called, "インスタンス構築時点ではaddSelecterIfUnique()は呼ばれない事");
+            assert(!stubs.cookieData.saveItems.called);
             app1.methods.add_device.apply(app1);
             assert(stubs.action.addSelecterIfUnique.calledWith(app1, EX_VUE2));
+            assert(stubs.cookieData.saveItems.calledWith(EX_VUE2.options));
+            stubs.action.addSelecterIfUnique.reset();
+            stubs.cookieData.saveItems.reset();
 
 
             var app2 = stubs.createVue.getCall(1).args[0]; // 【FixMe】2回目である必要はない。
@@ -107,20 +112,21 @@ describe( "vue_main.js", function(){
 
             expect(app2).to.have.property("methods");
             expect(app2.methods).to.have.property("update_inputer");
-            expect(stubs.action.showItemOnInputer.neverCalledWith(app2_data, EX_VUE1)); // 別の引数組み合わせで１ど呼ばれるので注意。
+            assert(stubs.action.showItemOnInputer.neverCalledWith(app2_data, EX_VUE1), "インスタンス構築時点ではshowItemOnInputer()は、app2,app1の組み合わせの引数では呼ばれない事"); // 別の引数組み合わせで１ど呼ばれるので注意。
             app2.methods.update_inputer.apply(app2_data,[]);
             assert(stubs.action.showItemOnInputer.calledWith(app2_data, EX_VUE1));
+            stubs.action.showItemOnInputer.reset();
 
             expect(app2.methods).to.have.property("update_chart");
-            expect(!stubs.action.updateLogViewer.called);
-            app2.methods.update_chart.apply(app2_data,[]);
-            expect(stubs.cookieData.saveAzureDomain.calledWith(EX_VUE1.azure_domain_str));
-            expect(stubs.cookieData.saveItems.calledWith(EX_VUE2.options));
+            assert(!stubs.action.updateLogViewer.called, "インスタンス構築時点ではupdateLogViewer()は呼ばれない事");
+            app2.methods.update_chart.apply(EX_VUE2,[]);
+            assert(stubs.cookieData.saveAzureDomain.calledWith(EX_VUE1.azure_domain_str), "saveAzureDomain()が呼ばれること");
+            assert(stubs.cookieData.saveItems.calledWith(EX_VUE2.options), "saveItems()が呼ばれること");
             assert(stubs.action.updateLogViewer.calledWith(EX_VUE1));
 
         });
 
-        it("正常系 - lastValue無し",function(){
+        it("インスタンスx2構築 - lastValue無し",function(){
             var EX_AZURE_DOMAIN = "AzD";
             var EX_VUE1 = {}, EX_VUE2 = {"options": [] };
             var EX_ITEMS = [{"text":"1つめテキスト", "value":"1つ目の値"}];
@@ -161,7 +167,7 @@ describe( "vue_main.js", function(){
             main.factoryImpl.action.setStub( original.action );
         });
 
-        it("正常系",function(){
+        it("jQuery側のupdateChart()を呼び出して、選択デバイスはCookieに保存する",function(){
             var EX_AZURE_DOMAIN = "AzD";
             var EX_DEVICE_KEY = "device_key___";
 
@@ -171,7 +177,6 @@ describe( "vue_main.js", function(){
                 },
                 "action" : {
                     "updateChart" : sinon.stub()
-                    // var updateChart = function( RESULT_SELECTOR, azure_domain, device_key ){}
                 }
             };
             main.factoryImpl.cookieData.setStub(stub.cookieData);
@@ -184,6 +189,7 @@ describe( "vue_main.js", function(){
 
             // 以下、検証。変数宣言位置は無視。
             assert(stub.action.updateChart.calledOnce);
+            // var updateChart = function( RESULT_SELECTOR, azure_domain, device_key ){}
             expect(stub.action.updateChart.getCall(0).args[0]).to.equal("#id_result");
             expect(stub.action.updateChart.getCall(0).args[1]).to.equal(EX_AZURE_DOMAIN);
             expect(stub.action.updateChart.getCall(0).args[2]).to.equal(EX_DEVICE_KEY);
@@ -201,23 +207,6 @@ describe( "vue_main.js", function(){
         });
         afterEach(function(){
         });
-
-
-var _addSelecterIfUnique = function( src, dest ){
-	var list = dest.options, n = list.length, is_unique = true;
-	while( 0<n-- ){
-		if( list[n].value == src.device_key_str ){
-			is_unique = false;
-			break;
-		}
-	}
-	if( is_unique ){
-		dest.options.push({
-			value : src.device_key_str,
-			text  : src.device_name_str
-		});
-	}
-};
 
         it("新規挿入",function(){
             var src = {
@@ -286,6 +275,51 @@ var _addSelecterIfUnique = function( src, dest ){
             addSelecterIfUnique( src, dest );
             expect(dest.options).to.deep.equal(base_array, "終端に既存");
         });
-    });    
+    });
+
+    
+    describe( "::_showItemOnInputer()",function(){
+        var showItemOnInputer = main.factoryImpl.action.getInstance().showItemOnInputer;
+        var original;
+        beforeEach(function(){
+        });
+        afterEach(function(){
+        });
+
+        it("選択されたドロップダウンメニューのvalueとtextをターゲットに設定する" ,function(){
+            var dest = {
+                "device_key_str" : "basekey",
+                "device_name_str" : "basename"
+            };
+            var src = {
+                "selected" : "",
+                "options" :
+                [
+                    {"value" : "hoge",     "text": "ほげ"},
+                    {"value" : "fuga",     "text": "フガ"},
+                    {"value" : "piyo",     "text": "ぴよ"}
+                ]
+            };
+
+            src.selected = src.options[0].value;
+            showItemOnInputer( src, dest );
+
+            // 以下、検証。
+            expect(dest.device_key_str).to.equal(src.options[0].value);
+            expect(dest.device_name_str).to.equal(src.options[0].text);
+
+            // 選択位置を変えてテスト
+            src.selected = src.options[2].value;
+            showItemOnInputer( src, dest );
+            expect(dest.device_key_str).to.equal(src.options[2].value);
+            expect(dest.device_name_str).to.equal(src.options[2].text);
+
+            src.selected = src.options[1].value;
+            showItemOnInputer( src, dest );
+            expect(dest.device_key_str).to.equal(src.options[1].value);
+            expect(dest.device_name_str).to.equal(src.options[1].text);
+        });
+    });
+
 });
 

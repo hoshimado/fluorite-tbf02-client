@@ -147,7 +147,7 @@ var COOKIE_VALUE = "AzBatteryLog_Value";
 var COOKIE_LAST_VALUE = "AzBatteryLog_LastValue";
 var COOKIE_OPTIONS = {expires: 7};
 var _loadItems = function(){
-	var cookie = window.Cookie;
+	var cookie = factoryImpl.tinyCookie.getInstance();
 	var list = [];
 	var name, value, n = MAX_LISTS;
 	while( 0 < n-- ){
@@ -163,7 +163,7 @@ var _loadItems = function(){
 	return list;
 };
 var _saveItems = function( list ){
-	var cookie = window.Cookie;
+	var cookie = factoryImpl.tinyCookie.getInstance();
 	var name, value, n = MAX_LISTS;
 	while( 0 < n-- ){
 		if( list[n] && list[n].text && list[n].value ){
@@ -173,19 +173,19 @@ var _saveItems = function( list ){
 	}
 };
 var _loadLastValue = function(){
-	var cookie = window.Cookie;
+	var cookie = factoryImpl.tinyCookie.getInstance();
 	return cookie(COOKIE_LAST_VALUE);
 };
 var _saveLastValue = function( value ){
-	var cookie = window.Cookie;
+	var cookie = factoryImpl.tinyCookie.getInstance();
 	cookie(COOKIE_LAST_VALUE, value, COOKIE_OPTIONS);
 };
 var _loadAzureDomain = function(){
-	var cookie = window.Cookie;
+	var cookie = factoryImpl.tinyCookie.getInstance();
 	return cookie("AzBatteryLog_Domain");
 }
 var _saveAzureDomain = function( azureStr ){
-	var cookie = window.Cookie;
+	var cookie = factoryImpl.tinyCookie.getInstance();
 	cookie("AzBatteryLog_Domain", azureStr, COOKIE_OPTIONS );
 };
 
@@ -199,6 +199,7 @@ var factoryImpl = { // require()を使う代わりに、new Factory() する。
 	"createVue" : new Factory(function(options){
 		return new Vue(options)
 	}), // Vue.jsが無ければ、undefined が設定されるだけ。
+	"tinyCookie" : new Factory( this.window ? window.Cookie : undefined), // Notブラウザ環境では敢えてundefinedにしておく。
 	"cookieData" : new Factory({
 		"loadItems" : _loadItems,
 		"saveItems" : _saveItems,
@@ -216,7 +217,7 @@ var factoryImpl = { // require()を使う代わりに、new Factory() する。
 	})
 };
 // UTデバッグ用のHookポイント。運用では外部公開しないメソッドはこっちにまとめる。
-if( !this.window ){
+if( !this.window ){ // Node.js環境のとき、以下を外部公開する。
 	exports.factoryImpl = factoryImpl;
 	exports.Factory = Factory;
 }
