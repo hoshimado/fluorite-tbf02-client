@@ -113,7 +113,7 @@ if( this.window ){
 var Factory; // 複数ファイルでの重複宣言、ブラウザ環境では「後から読み込んだ方で上書きされる」でOKのはず。。。
 var Factory4Require;
 if( !this.window ){ // Node.js環境のとき、以下を実行する。
-	Factory = require("./factory4require_compatible_brower.js").Factory;
+	Factory = require("./factory4require_compatible_browser.js").Factory;
 	Factory4Require = require("./factory4require_compatible_browser.js").Factory4Require;
 }
 var factoryImpl = { // require()を使う代わりに、new Factory() する。
