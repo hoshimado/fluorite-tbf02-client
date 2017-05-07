@@ -11,7 +11,7 @@ var updateChart = function( RESULT_SELECTOR, azure_domain, device_key ){
 		var target = $(RESULT_SELECTOR);
 
     if((azure_domain.length != 0) && (device_key.length != 0)){
-    	target.empty();
+      target.empty();
       target.append("<i class=\"fa fa-spinner fa-spin\"></i>");
 
       _getChartDataOverAjax(
@@ -44,10 +44,10 @@ var updateChart = function( RESULT_SELECTOR, azure_domain, device_key ){
                 } 
             });
             dfd.resolve();
-      }).fail(function( err, errorText ){
+      }).fail(function( jqXHR, textStatus, errorThrown ){
             target.empty();
-            target.append( errorText );
-            dfd.reject();
+            target.append( textStatus );
+            dfd.reject(jqXHR, textStatus, errorThrown);
       });
     }else{
         target.empty();
@@ -65,7 +65,7 @@ var _getChartDataOverAjax = function( azureDomain, device_key ){
             "device_key" : device_key
         },
         dataType : "jsonp",
-        timeout : 10000
+        timeout : 3000
     });
 };
 

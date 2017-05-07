@@ -1,26 +1,8 @@
 /*
     [vue_main.js]
-
     encoding=UTF-8
 
 */
-
-
-/**
- * @description オブジェクトのFactory
- */
-var Factory = function( staticInstance ){
-    this.instance = staticInstance;
-}
-Factory.prototype.getInstance = function(){
-    return this.instance;
-};
-// if( 開発環境ならば ){ ～ }などとする。
-Factory.prototype.setStub = function( value ){
-    this.instance = value;
-};
-
-
 
 
 
@@ -40,7 +22,7 @@ var setupOnLoad = function(){
 		el: '#app',
 		data: function(){
 			return {
-			"app_version_str"  : "Ver.20170504",
+			"app_version_str"  : "Ver.20170506",
 			"azure_domain_str" : factoryImpl.cookieData.getInstance().loadAzureDomain(),
 			"device_key_str"   : "",
 			"device_name_str"  : ""
@@ -126,88 +108,27 @@ if( this.window ){
 
 
 
-/*
-  function Cookie(key, value, opts) {
-    if (value === void 0) {
-      return Cookie.get(key);
-    } else if (value === null) {
-      Cookie.remove(key);
-    } else {
-      Cookie.set(key, value, opts);
-    }
-  }
-*/
-/**
- * Cookieを利用したデータ保存。
- *
- */
-var MAX_LISTS = 7;
-var COOKIE_NAME  = "AzBatteryLog_Text";
-var COOKIE_VALUE = "AzBatteryLog_Value";
-var COOKIE_LAST_VALUE = "AzBatteryLog_LastValue";
-var COOKIE_OPTIONS = {expires: 7};
-var _loadItems = function(){
-	var cookie = factoryImpl.tinyCookie.getInstance();
-	var list = [];
-	var name, value, n = MAX_LISTS;
-	while( 0 < n-- ){
-		name = cookie( COOKIE_NAME + n );
-		value = cookie( COOKIE_VALUE + n );
-		if( name && value ){
-			list.push({
-				"text" : name,
-				"value" : value
-			});
-		}
-	}
-	return list;
-};
-var _saveItems = function( list ){
-	var cookie = factoryImpl.tinyCookie.getInstance();
-	var name, value, n = MAX_LISTS;
-	while( 0 < n-- ){
-		if( list[n] && list[n].text && list[n].value ){
-			name = cookie( COOKIE_NAME + n, list[n].text, COOKIE_OPTIONS );
-			value = cookie( COOKIE_VALUE + n, list[n].value, COOKIE_OPTIONS );
-		}
-	}
-};
-var _loadLastValue = function(){
-	var cookie = factoryImpl.tinyCookie.getInstance();
-	return cookie(COOKIE_LAST_VALUE);
-};
-var _saveLastValue = function( value ){
-	var cookie = factoryImpl.tinyCookie.getInstance();
-	cookie(COOKIE_LAST_VALUE, value, COOKIE_OPTIONS);
-};
-var _loadAzureDomain = function(){
-	var cookie = factoryImpl.tinyCookie.getInstance();
-	return cookie("AzBatteryLog_Domain");
-}
-var _saveAzureDomain = function( azureStr ){
-	var cookie = factoryImpl.tinyCookie.getInstance();
-	cookie("AzBatteryLog_Domain", azureStr, COOKIE_OPTIONS );
-};
-
-
-
-
-
 
 // ----------------------------------------------------------------------
+var Factory; // 複数ファイルでの重複宣言、ブラウザ環境では「後から読み込んだ方で上書きされる」でOKのはず。。。
+var Factory4Require;
+if( !this.window ){ // Node.js環境のとき、以下を実行する。
+	Factory = require("./factory4require_compatible_brower.js").Factory;
+	Factory4Require = require("./factory4require_compatible_browser.js").Factory4Require;
+}
 var factoryImpl = { // require()を使う代わりに、new Factory() する。
 	"createVue" : new Factory(function(options){
 		return new Vue(options)
 	}), // Vue.jsが無ければ、undefined が設定されるだけ。
 	"tinyCookie" : new Factory( this.window ? window.Cookie : undefined), // Notブラウザ環境では敢えてundefinedにしておく。
-	"cookieData" : new Factory({
+	"cookieData" : this.window ? new Factory({
 		"loadItems" : _loadItems,
 		"saveItems" : _saveItems,
 		"loadLastValue" : _loadLastValue,
 		"saveLastValue" : _saveLastValue,
 		"loadAzureDomain" : _loadAzureDomain,
 		"saveAzureDomain" : _saveAzureDomain
-	}),
+	}) : new Factory4Require("./cookie_io.js"), // ブラウザ環境は外部ファイル無いの変数もグローバル。nodejs環境はrequire()経由。
 	"action" : new Factory({
 		"addSelecterIfUnique" : _addSelecterIfUnique,
 		"showItemOnInputer" : _showItemOnInputer,

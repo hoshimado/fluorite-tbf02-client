@@ -25,21 +25,35 @@
 	<script src="./brw_jq/ui_chart.js"></script>
 	<script>
 		$(document).ready(function(){
-			var panelbutton = bindExpandCollapsePanel( "id_ctrl_panel" )
+			var panel_button = bindExpandCollapsePanel( "id_ctrl_panel" )
 			setTimeout( function(){
 				var azure_domain = $("#azure_domain");
 				var device_key = $("#id_device_key");
 				var azure_str, device_str;
-				var dfd;
+				var dfd, dfd2 = $.Deferred();;
 				if( (device_key.size() > 0) && (azure_domain.size() > 0) ){
 					azure_str = azure_domain.val();
 					device_str = device_key.val();
 					dfd = updateChart("#id_result", azure_str, device_str);
-					dfd.fail(function(){
-						panelbutton.click();
+					dfd.fail(function(jqXHR, textStatus, errorThrown){
+						if( textStatus == "timeout" ){
+							// タイムアウト時は1回だけ、30秒待機後にリトライ。
+							$("#id_result").empty();
+							$("#id_result").append("<i class=\"fa fa-spinner fa-spin\"></i>コールドスタンバイからの復帰待ち中。30秒お待ちください・・・。");
+							setTimeout( function(){
+								dfd2.resolve();
+							}, 30000);
+						}else{
+							panel_button.click();
+						}
+					});
+					dfd2.done(function(){
+						updateChart("#id_result", azure_str, device_str)
+					}).fail(function(){
+						panel_button.click();
 					});
 				}else{
-					panelbutton.click();
+					panel_button.click();
 				}
 			}, 700 );
 		});
@@ -48,6 +62,9 @@
 
 	<script src="https://unpkg.com/vue/dist/vue.js"></script>
 	<script src="./brw_lib/tiny-cookie/tiny-cookie.js"></script>
+	<!-- src配下は、この順序でファイルを読み込むこと（変数の多重宣言で上書き順序の都合）。 -->
+	<script src="./src/factory4require_compatible_browser.js"></script>
+	<script src="./src/cookie_io.js"></script>
 	<script src="./src/vue_main.js"></script>
 </head>
 <body>
