@@ -6,13 +6,38 @@
 
 
 // こっちはjQueryのまま。後で修正する。
+var _getChartDataOverAjax = function( azureDomain, device_key ){
+    return $.ajax({
+        type : "GET",
+        url  : azureDomain + "/api/v1/batterylog/show",
+        data : { 
+            "device_key" : device_key
+        },
+        dataType : "jsonp",
+        timeout : 3000
+    });
+};
+var _createTextMessage = function( logArray ){
+    var length = logArray.length;
+    var str = "";
+
+    str += "バッテリー残量：" + logArray[ length -1 ].battery + " ％ at ";
+    str += logArray[ length -1 ].created_at.substr(0,10) + "<br>\n";
+    str += "<br>\n";
+
+    return str;
+};
 var updateChart = function( RESULT_SELECTOR, azure_domain, device_key ){
     var dfd = $.Deferred(); // https://api.jquery.com/deferred.promise/
-		var target = $(RESULT_SELECTOR);
+	var target = $(RESULT_SELECTOR);
 
     if((azure_domain.length != 0) && (device_key.length != 0)){
       target.empty();
       target.append("<i class=\"fa fa-spinner fa-spin\"></i>");
+
+    // [デバッグ用]
+    // dfd.reject({}, "timeout", {});
+    // return dfd;
 
       _getChartDataOverAjax(
             azure_domain,
@@ -57,18 +82,6 @@ var updateChart = function( RESULT_SELECTOR, azure_domain, device_key ){
     return dfd;
 };
 
-var _getChartDataOverAjax = function( azureDomain, device_key ){
-    return $.ajax({
-        type : "GET",
-        url  : azureDomain + "/api/v1/batterylog/show",
-        data : { 
-            "device_key" : device_key
-        },
-        dataType : "jsonp",
-        timeout : 3000
-    });
-};
-
 var _createChatData = function( logArray ){
     var i, length = logArray.length;
     var labels_array = [], data_array = [], cut_off = length - 50;
@@ -91,16 +104,6 @@ var _createChatData = function( logArray ){
 };
 
 
-var _createTextMessage = function( logArray ){
-    var length = logArray.length;
-    var str = "";
-
-    str += "バッテリー残量：" + logArray[ length -1 ].battery + " ％ at ";
-    str += logArray[ length -1 ].created_at.substr(0,10) + "<br>\n";
-    str += "<br>\n";
-
-    return str;
-};
 
 
 
