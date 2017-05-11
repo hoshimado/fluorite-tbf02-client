@@ -22,7 +22,7 @@ var setupOnLoad = function(){
 		el: '#app',
 		data: function(){
 			return {
-			"app_version_str"  : "Ver.20170506",
+			"app_version_str"  : "Ver.20170511",
 			"azure_domain_str" : factoryImpl.cookieData.getInstance().loadAzureDomain(),
 			"device_key_str"   : "",
 			"device_name_str"  : ""
