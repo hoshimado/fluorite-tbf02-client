@@ -21,9 +21,14 @@ var _createTextMessage = function( logArray ){
     var length = logArray.length;
     var str = "";
 
-    str += "バッテリー残量：" + logArray[ length -1 ].battery + " ％ at ";
-    str += logArray[ length -1 ].created_at.substr(0,10) + "<br>\n";
-    str += "<br>\n";
+    if( length > 0 ){
+        str += "バッテリー残量：" + logArray[ length -1 ].battery + " ％ at ";
+        str += logArray[ length -1 ].created_at.substr(0,10) + "<br>\n";
+        str += "<br>\n";
+    }else{
+        str += "取得可能なデータは有りませんでした。";
+    }
+
 
     return str;
 };
@@ -43,8 +48,9 @@ var updateChart = function( RESULT_SELECTOR, azure_domain, device_key ){
             azure_domain,
             device_key
       ).done(function(result){
-            var plot_source = _createChatData( result.table );
-            var str = _createTextMessage( result.table );
+            var table = (result.table.length > 0) ? result.table : [];
+            var plot_source = _createChatData( table );
+            var str = _createTextMessage( table );
 
             target.empty();
 

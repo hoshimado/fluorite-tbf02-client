@@ -27,7 +27,7 @@ var COOKIE_VALUE = "AzBatteryLog_Value";
 var COOKIE_LAST_VALUE = "AzBatteryLog_LastValue";
 var COOKIE_OPTIONS = {expires: 7};
 var _loadItems = function(){
-	var cookie = factoryImpl.tinyCookie.getInstance();
+	var cookie = factoryCkImpl.tinyCookie.getInstance();
 	var list = [];
 	var name, value, n = MAX_LISTS;
 	while( 0 < n-- ){
@@ -43,7 +43,7 @@ var _loadItems = function(){
 	return list;
 };
 var _saveItems = function( list ){
-	var cookie = factoryImpl.tinyCookie.getInstance();
+	var cookie = factoryCkImpl.tinyCookie.getInstance();
 	var name, value, n = MAX_LISTS;
 	while( 0 < n-- ){
 		if( list[n] && list[n].text && list[n].value ){
@@ -53,20 +53,33 @@ var _saveItems = function( list ){
 	}
 };
 var _loadLastValue = function(){
-	var cookie = factoryImpl.tinyCookie.getInstance();
+	var cookie = factoryCkImpl.tinyCookie.getInstance();
 	return cookie(COOKIE_LAST_VALUE);
 };
 var _saveLastValue = function( value ){
-	var cookie = factoryImpl.tinyCookie.getInstance();
+	var cookie = factoryCkImpl.tinyCookie.getInstance();
 	cookie(COOKIE_LAST_VALUE, value, COOKIE_OPTIONS);
 };
 var _loadAzureDomain = function(){
-	var cookie = factoryImpl.tinyCookie.getInstance();
+	var cookie = factoryCkImpl.tinyCookie.getInstance();
 	return cookie("AzBatteryLog_Domain");
 }
 var _saveAzureDomain = function( azureStr ){
-	var cookie = factoryImpl.tinyCookie.getInstance();
+	var cookie = factoryCkImpl.tinyCookie.getInstance();
 	cookie("AzBatteryLog_Domain", azureStr, COOKIE_OPTIONS );
+};
+
+
+
+// ----------------------------------------------------------------------
+var Factory; // 複数ファイルでの重複宣言、ブラウザ環境では「後から読み込んだ方で上書きされる」でOKのはず。。。
+var Factory4Require;
+if( !this.window ){ // Node.js環境のとき、以下を実行する。
+	Factory = require("./factory4require_compatible_browser.js").Factory;
+	Factory4Require = require("./factory4require_compatible_browser.js").Factory4Require;
+}
+var factoryCkImpl ={ // ブラウザ環境ではグローバルなので、vue_main.jsでの定義とは変えておく。
+	"tinyCookie" : new Factory( this.window ? window.Cookie : undefined ) // Notブラウザ環境では敢えてundefinedにしておく。
 };
 
 
@@ -81,4 +94,3 @@ if( !this.window ){
     exports.loadAzureDomain = _loadAzureDomain;
     exports.saveAzureDomain = _saveAzureDomain;
 }
-

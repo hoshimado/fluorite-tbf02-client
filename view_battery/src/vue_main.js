@@ -22,13 +22,15 @@ var setupOnLoad = function(){
 		el: '#app',
 		data: function(){
 			return {
-			"app_version_str"  : "Ver.20170511",
 			"azure_domain_str" : factoryImpl.cookieData.getInstance().loadAzureDomain(),
 			"device_key_str"   : "",
 			"device_name_str"  : ""
 			};
 		},
 		methods : {
+			"upload_device" : function(event){
+				factoryImpl.file.getInstance().loadConfigFile(this, event);
+			},
 			"add_azure" : function(event){
 				factoryImpl.cookieData.getInstance().saveAzureDomain( this.azure_domain_str );
 			},
@@ -42,6 +44,7 @@ var setupOnLoad = function(){
 		el: '#app_selector',
 		data: function(){
 			return {
+			"app_version_str"  : "Ver.20170513",
 			// 以下はセレクター関連
 			"selected" : last_value ? last_value : "", // ここは初期選択したいvalueを指定する。
 			"options" : items
@@ -120,7 +123,6 @@ var factoryImpl = { // require()を使う代わりに、new Factory() する。
 	"createVue" : new Factory(function(options){
 		return new Vue(options)
 	}), // Vue.jsが無ければ、undefined が設定されるだけ。
-	"tinyCookie" : new Factory( this.window ? window.Cookie : undefined), // Notブラウザ環境では敢えてundefinedにしておく。
 	"cookieData" : this.window ? new Factory({
 		"loadItems" : _loadItems,
 		"saveItems" : _saveItems,
@@ -129,6 +131,9 @@ var factoryImpl = { // require()を使う代わりに、new Factory() する。
 		"loadAzureDomain" : _loadAzureDomain,
 		"saveAzureDomain" : _saveAzureDomain
 	}) : new Factory4Require("./cookie_io.js"), // ブラウザ環境は外部ファイル無いの変数もグローバル。nodejs環境はrequire()経由。
+	"file": this.window ? new Factory({
+		"loadConfigFile" : _loadConfigFile
+	}) : new Factory4Require("./file_io.js"), // ブラウザ環境は～（以下略）。
 	"action" : new Factory({
 		"addSelecterIfUnique" : _addSelecterIfUnique,
 		"showItemOnInputer" : _showItemOnInputer,
@@ -142,6 +147,3 @@ if( !this.window ){ // Node.js環境のとき、以下を外部公開する。
 	exports.factoryImpl = factoryImpl;
 	exports.Factory = Factory;
 }
-
-
-

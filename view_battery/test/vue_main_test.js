@@ -23,7 +23,8 @@ describe( "vue_main.js", function(){
             original = {
                 "createVue" : main.factoryImpl.createVue.getInstance(),
                 "cookieData" : main.factoryImpl.cookieData.getInstance(),
-                "action" : main.factoryImpl.action.getInstance()
+                "file" : main.factoryImpl.file.getInstance(),
+                "action" : main.factoryImpl.action.getInstance(),
             };
 
             stubs = {
@@ -36,6 +37,9 @@ describe( "vue_main.js", function(){
                     "loadAzureDomain" : sinon.stub(),
                     "saveAzureDomain" : sinon.stub()
                 },
+                "file" : {
+                    "loadConfigFile" : sinon.stub()
+                },
                 "action" : {
                     "addSelecterIfUnique" : sinon.stub(),
                     "showItemOnInputer" : sinon.stub(),
@@ -46,11 +50,13 @@ describe( "vue_main.js", function(){
             };
             main.factoryImpl.createVue.setStub(stubs.createVue);
             main.factoryImpl.cookieData.setStub(stubs.cookieData);
+            main.factoryImpl.file.setStub(stubs.file);
             main.factoryImpl.action.setStub(stubs.action);
         });
         afterEach(function(){
             main.factoryImpl.createVue.setStub( original.createVue );
             main.factoryImpl.cookieData.setStub( original.cookieData );
+            main.factoryImpl.file.setStub( original.file );
             main.factoryImpl.action.setStub( original.action );
         });
 
@@ -77,7 +83,6 @@ describe( "vue_main.js", function(){
 
             expect(app1).to.have.property("data");
             var app1_data = app1.data();
-            expect(app1_data).to.have.property("app_version_str");
             expect(app1_data).to.have.property("azure_domain_str").and.equal(EX_AZURE_DOMAIN);
             expect(app1_data).to.have.property("device_key_str").and.equal("");
             expect(app1_data).to.have.property("device_name_str").and.equal("");
@@ -99,12 +104,20 @@ describe( "vue_main.js", function(){
             stubs.action.addSelecterIfUnique.reset();
             stubs.cookieData.saveItems.reset();
 
+            expect(app1.methods).to.have.property("upload_device");
+            var EX_FILE_CONFIG ={};
+            stubs.file.loadConfigFile.onCall().returns(EX_FILE_CONFIG);
+            app1.methods.upload_device.apply(app1, ["イベント"]);
+            assert(stubs.file.loadConfigFile.calledOnce);
+            expect(stubs.file.loadConfigFile.getCall(0).args[0]).to.equal(app1);
+            expect(stubs.file.loadConfigFile.getCall(0).args[1]).to.equal("イベント");
 
             var app2 = stubs.createVue.getCall(1).args[0]; // 【FixMe】2回目である必要はない。
             expect(app2).to.have.property("el").and.equal("#app_selector");
 
             expect(app2).to.have.property("data");
             var app2_data = app2.data();
+            expect(app2_data).to.have.property("app_version_str");
             expect(app2_data).to.have.property("selected").and.equal(EX_LAST_VALUE);
             expect(app2_data).to.have.property("options").and.equal(EX_ITEMS);
 
