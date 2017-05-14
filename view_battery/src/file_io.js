@@ -3,26 +3,62 @@
     encoding=UTF-8
 */
 
+var TARGET_VERSION = "20170514";
 
 var _loadConfigFile = function( vueTaregetInstance, event){
     var promise_load_text = _factory_file_.io.getInstance().loadTextFile(event);
 
-    promise_load_text.then(function(loadedText){
+    return promise_load_text.then(function(loadedText){
         var param = _factory_file_.parts.getInstance().parseBatteryLogAzureParam6Text( loadedText );
         var insert = _factory_file_.parts.getInstance().setAndInsert2Vue;
 
-        // 【ToDo】成功失敗判定
-
-        insert( vueTaregetInstance, param );        
-    }).catch(function(){
-        // エラー時。
+        if( param && insert( vueTaregetInstance, param ) ){
+            vueTaregetInstance.add_device();
+            return Promise.resolve();
+        }else{
+            _factory_file_.dialog.getInstance().alert( "ファイルから、期待した値を読み込めませんでした。" );
+            return Promise.reject();
+        }
     });
 };
 var _parseBatteryLogAzureParam6Text = function( textSrc ){
-    return textSrc;
+    var lines = textSrc.split( "\n" );
+    var items, key, value;
+    var map = {
+        "AzureDomain" : "azure_domain",
+        "DeviceKey" : "device_key",
+        "DeviceName" : "device_name",
+        "Version" : "version"
+    };
+    var param = {};
+
+    n = lines.length;
+    while( 0<n-- ){
+        items = lines[n];
+        if( (0 < items.length) && items.match(/=/) ){
+            items = items.split("=");
+            key = items[0];
+            value = items[1].trim();
+            if( map.hasOwnProperty(key) ){
+                param[ map[key] ] = value;
+            }
+        }
+    }
+
+    if( Object.keys(map).length != Object.keys(param).length ){
+        return null;
+    }
+    return (param.version == TARGET_VERSION) ? param : null;
 };
 var _setAndInsert2Vue = function( vueTaregetInstance, param ){
-    console.log(param);
+    if( param ){
+        vueTaregetInstance.azure_domain_str = param.azure_domain;
+        vueTaregetInstance.device_key_str = param.device_key;
+        vueTaregetInstance.device_name_str = param.device_name;
+        return true;
+    }else{
+        return false;
+    }
 };
 
 
@@ -55,6 +91,10 @@ if( !this.window ){ // Node.js環境のとき、以下を実行する。
 	Factory4Require = require("./factory4require_compatible_browser.js").Factory4Require;
 }
 var _factory_file_ = { // ブラウザ環境ではグローバルなので、vue_main.jsでの定義とは変えておく。
+	"dialog" : new Factory(
+        this.window ? { "alert" : function(param){ window.alert(param); } }
+        : undefined 
+    ), // とりあえずwindow.alert()で実装。後日にvueで実装したい。https://jp.vuejs.org/v2/examples/modal.html
 	"io" : new Factory(
         this.window ? { "loadTextFile" : _loadTextFile }
         : undefined 
@@ -62,7 +102,7 @@ var _factory_file_ = { // ブラウザ環境ではグローバルなので、vue
     "parts" : new Factory({
         "parseBatteryLogAzureParam6Text" : _parseBatteryLogAzureParam6Text,
         "setAndInsert2Vue" : _setAndInsert2Vue
-    })
+    }),
 };
 
 

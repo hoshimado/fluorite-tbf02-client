@@ -19,10 +19,25 @@ var _getChartDataOverAjax = function( azureDomain, device_key ){
 };
 var _createTextMessage = function( logArray ){
     var length = logArray.length;
-    var str = "";
+    var battery, str = "";
 
     if( length > 0 ){
-        str += "バッテリー残量：" + logArray[ length -1 ].battery + " ％ at ";
+        battery = logArray[ length -1 ].battery;
+        str += "バッテリー残量：" + battery + " ％ ";
+        str += "<i class=\"fa fa-battery-"
+        if( battery > 78 ){ // ここの決め方は私の個人的感覚に依存する。
+            str += "full";
+        }else if( battery > 60 ){
+            str += "three-quarters";
+        }else if( battery > 40 ){
+            str += "half";
+        }else if( battery > 30 ){ // この領域（40～30）に入ったら充電しておく目安。
+            str += "quarter";
+        }else{
+            str += "empty";
+        }
+        str += "\"></i> &nbsp; ";
+        str += "at ";
         str += logArray[ length -1 ].created_at.substr(0,10) + "<br>\n";
         str += "<br>\n";
     }else{

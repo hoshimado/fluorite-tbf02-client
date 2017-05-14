@@ -232,7 +232,8 @@ describe( "vue_main.js", function(){
                     {"value" : "hoge",     "text": "ほげ"},
                     {"value" : "fuga",     "text": "フガ"},
                     {"value" : "piyo",     "text": "ぴよ"}
-                ]
+                ],
+                "selected" : "piyo"
             };
             var base_array = [].concat( dest.options );
 
@@ -240,6 +241,7 @@ describe( "vue_main.js", function(){
 
             // 以下、検証。
             expect(dest.options).to.include({"value":src.device_key_str, "text":src.device_name_str});
+            expect(dest.selected).to.equal(src.device_key_str);
         });
         it("既存なので変化しない",function(){
             var src = {
@@ -333,6 +335,5 @@ describe( "vue_main.js", function(){
             expect(dest.device_name_str).to.equal(src.options[1].text);
         });
     });
-
 });
 

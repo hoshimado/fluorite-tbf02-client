@@ -31,10 +31,10 @@ var setupOnLoad = function(){
 			"upload_device" : function(event){
 				factoryImpl.file.getInstance().loadConfigFile(this, event);
 			},
-			"add_azure" : function(event){
+			"add_azure" : function(){
 				factoryImpl.cookieData.getInstance().saveAzureDomain( this.azure_domain_str );
 			},
-			"add_device" : function(e){
+			"add_device" : function(){
 				factoryImpl.action.getInstance().addSelecterIfUnique( this, app2 ); // 後でマージする。⇒this１つになる。
 				factoryImpl.cookieData.getInstance().saveItems( app2.options ); // 後でマージする。⇒this.optionsになる。
 			}
@@ -44,7 +44,7 @@ var setupOnLoad = function(){
 		el: '#app_selector',
 		data: function(){
 			return {
-			"app_version_str"  : "Ver.20170513",
+			"app_version_str"  : "Ver.20170514",
 			// 以下はセレクター関連
 			"selected" : last_value ? last_value : "", // ここは初期選択したいvalueを指定する。
 			"options" : items
@@ -82,6 +82,7 @@ var _addSelecterIfUnique = function( src, dest ){
 			text  : src.device_name_str
 		});
 	}
+	dest.selected = src.device_key_str;
 };
 var _showItemOnInputer = function( src, dest ){
 	var selected_value = src.selected;
