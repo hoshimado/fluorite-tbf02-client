@@ -24,13 +24,7 @@ select {
 
 
 
-#id_azure_div{
-	display: block;
-}
-#id_device_key_direct_div{
-	display: block;
-}
-#id_device_key_titel_and_name{
+#id_azure_div, #id_device_key_direct_div, #id_device_key_titel_and_name{
 	display: block;
 }
 #id_upload_configfile_div{
