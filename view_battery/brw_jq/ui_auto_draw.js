@@ -50,6 +50,7 @@ var auto_draw_with_default_parameter = function(
             dfd_1st_load = funcUpdateChart("#" + idResult, azure_str, device_str);
         }else{
             dfd_1st_load = $.Deferred();
+            dfd_1st_load.reject();
         }
         dfd_1st_load.done(function(){
             // チャート描画、正常終了。
@@ -60,12 +61,13 @@ var auto_draw_with_default_parameter = function(
             if( textStatus == "timeout" ){
                 // タイムアウト時は1回だけ、30秒待機後にリトライ。
                 result_node.empty(); // <i class=\"fa fa-spinner fa-spin\"></i>
-                result_node.append("※コールドスタンバイからの復帰中。20秒お待ちください・・・。<br><div id=\"_id_countdown\"></div>");
-                dfd_progressbar_left( $("#_id_countdown"), 20 )
+                result_node.append("※コールドスタンバイからの復帰中。30秒お待ちください・・・。<br><div id=\"_id_countdown\"></div>");
+                dfd_progressbar_left( $("#_id_countdown"), 30 )
                 .done(function(){
                     dfd_2nd_retry.resolve();
                 });
             }else{
+                // タイムアウト以外が原因（そもそもajax呼ばずにreject()とかも含む）。
                 dfd_2nd_retry.reject();
             }
         });

@@ -44,7 +44,7 @@ var setupOnLoad = function(){
 		el: '#app_selector',
 		data: function(){
 			return {
-			"app_version_str"  : "Ver.20170514",
+			"app_version_str"  : "Ver.20170517",
 			// 以下はセレクター関連
 			"selected" : last_value ? last_value : "", // ここは初期選択したいvalueを指定する。
 			"options" : items
