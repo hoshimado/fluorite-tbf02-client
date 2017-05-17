@@ -6,20 +6,66 @@
 
 
 // こっちはjQueryのまま。後で修正する。
+var _getChartDataOverAjax = function( azureDomain, device_key ){
+    return $.ajax({
+        type : "GET",
+        url  : azureDomain + "/api/v1/batterylog/show",
+        data : { 
+            "device_key" : device_key
+        },
+        dataType : "jsonp",
+        timeout : 3000
+    });
+};
+var _createTextMessage = function( logArray ){
+    var length = logArray.length;
+    var battery, str = "";
+
+    if( length > 0 ){
+        battery = logArray[ length -1 ].battery;
+        str += "バッテリー残量：" + battery + " ％ ";
+        str += "<i class=\"fa fa-battery-"
+        if( battery > 78 ){ // ここの決め方は私の個人的感覚に依存する。
+            str += "full";
+        }else if( battery > 60 ){
+            str += "three-quarters";
+        }else if( battery > 40 ){
+            str += "half";
+        }else if( battery > 30 ){ // この領域（40～30）に入ったら充電しておく目安。
+            str += "quarter";
+        }else{
+            str += "empty";
+        }
+        str += "\"></i> &nbsp; ";
+        str += "at ";
+        str += logArray[ length -1 ].created_at.substr(0,10) + "<br>\n";
+        str += "<br>\n";
+    }else{
+        str += "取得可能なデータは有りませんでした。";
+    }
+
+
+    return str;
+};
 var updateChart = function( RESULT_SELECTOR, azure_domain, device_key ){
     var dfd = $.Deferred(); // https://api.jquery.com/deferred.promise/
-		var target = $(RESULT_SELECTOR);
+	var target = $(RESULT_SELECTOR);
 
     if((azure_domain.length != 0) && (device_key.length != 0)){
-    	target.empty();
+      target.empty();
       target.append("<i class=\"fa fa-spinner fa-spin\"></i>");
+
+    // [デバッグ用]
+    // dfd.reject({}, "timeout", {});
+    // return dfd;
 
       _getChartDataOverAjax(
             azure_domain,
             device_key
       ).done(function(result){
-            var plot_source = _createChatData( result.table );
-            var str = _createTextMessage( result.table );
+            var table = (result.table.length > 0) ? result.table : [];
+            var plot_source = _createChatData( table );
+            var str = _createTextMessage( table );
 
             target.empty();
 
@@ -44,10 +90,10 @@ var updateChart = function( RESULT_SELECTOR, azure_domain, device_key ){
                 } 
             });
             dfd.resolve();
-      }).fail(function( err, errorText ){
+      }).fail(function( jqXHR, textStatus, errorThrown ){
             target.empty();
-            target.append( errorText );
-            dfd.reject();
+            target.append( textStatus );
+            dfd.reject(jqXHR, textStatus, errorThrown);
       });
     }else{
         target.empty();
@@ -55,18 +101,6 @@ var updateChart = function( RESULT_SELECTOR, azure_domain, device_key ){
         dfd.reject();
     }
     return dfd;
-};
-
-var _getChartDataOverAjax = function( azureDomain, device_key ){
-    return $.ajax({
-        type : "GET",
-        url  : azureDomain + "/api/v1/batterylog/show",
-        data : { 
-            "device_key" : device_key
-        },
-        dataType : "jsonp",
-        timeout : 10000
-    });
 };
 
 var _createChatData = function( logArray ){
@@ -91,16 +125,6 @@ var _createChatData = function( logArray ){
 };
 
 
-var _createTextMessage = function( logArray ){
-    var length = logArray.length;
-    var str = "";
-
-    str += "バッテリー残量：" + logArray[ length -1 ].battery + " ％ at ";
-    str += logArray[ length -1 ].created_at.substr(0,10) + "<br>\n";
-    str += "<br>\n";
-
-    return str;
-};
 
 
 

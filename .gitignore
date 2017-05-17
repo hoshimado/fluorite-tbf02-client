@@ -55,5 +55,7 @@ backup_jquery_version
 *.LOG
 *.log
 
+# File for Desktop App
+*desktop*
 
 

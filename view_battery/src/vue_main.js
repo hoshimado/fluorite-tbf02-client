@@ -1,26 +1,8 @@
 /*
     [vue_main.js]
-
     encoding=UTF-8
 
 */
-
-
-/**
- * @description オブジェクトのFactory
- */
-var Factory = function( staticInstance ){
-    this.instance = staticInstance;
-}
-Factory.prototype.getInstance = function(){
-    return this.instance;
-};
-// if( 開発環境ならば ){ ～ }などとする。
-Factory.prototype.setStub = function( value ){
-    this.instance = value;
-};
-
-
 
 
 
@@ -46,10 +28,13 @@ var setupOnLoad = function(){
 			};
 		},
 		methods : {
-			"add_azure" : function(event){
+			"upload_device" : function(event){
+				factoryImpl.file.getInstance().loadConfigFile(this, event);
+			},
+			"add_azure" : function(){
 				factoryImpl.cookieData.getInstance().saveAzureDomain( this.azure_domain_str );
 			},
-			"add_device" : function(e){
+			"add_device" : function(){
 				factoryImpl.action.getInstance().addSelecterIfUnique( this, app2 ); // 後でマージする。⇒this１つになる。
 				factoryImpl.cookieData.getInstance().saveItems( app2.options ); // 後でマージする。⇒this.optionsになる。
 			}
@@ -59,6 +44,7 @@ var setupOnLoad = function(){
 		el: '#app_selector',
 		data: function(){
 			return {
+			"app_version_str"  : "Ver.20170517",
 			// 以下はセレクター関連
 			"selected" : last_value ? last_value : "", // ここは初期選択したいvalueを指定する。
 			"options" : items
@@ -69,6 +55,11 @@ var setupOnLoad = function(){
 				factoryImpl.action.getInstance().showItemOnInputer( this, app ); // 後でマージする。⇒this１つになる。
 			},
 			"update_chart" : function(e){
+				// ドメインと選択肢を、この時点の値を以て保存し直する。
+				factoryImpl.cookieData.getInstance().saveAzureDomain( app.azure_domain_str );
+				factoryImpl.cookieData.getInstance().saveItems( this.options );
+
+				// チャート描画を呼び出す。
 				factoryImpl.action.getInstance().updateLogViewer( app ); // 後でマージする。⇒thisになる。
 			}
 		}
@@ -91,6 +82,7 @@ var _addSelecterIfUnique = function( src, dest ){
 			text  : src.device_name_str
 		});
 	}
+	dest.selected = src.device_key_str;
 };
 var _showItemOnInputer = function( src, dest ){
 	var selected_value = src.selected;
@@ -104,7 +96,7 @@ var _showItemOnInputer = function( src, dest ){
 	}
 };
 var _updateLogViewer = function( src ){
-	updateChart( "#id_result", src.azure_domain_str, src.device_key_str ) // 出力先がハードコーディングなので後で直す。
+	factoryImpl.action.getInstance().updateChart( "#id_result", src.azure_domain_str, src.device_key_str ) // 出力先がハードコーディングなので後で直す。
 	factoryImpl.cookieData.getInstance().saveLastValue( src.device_key_str )
 };
 if( this.window ){
@@ -120,88 +112,29 @@ if( this.window ){
 
 
 
-/*
-  function Cookie(key, value, opts) {
-    if (value === void 0) {
-      return Cookie.get(key);
-    } else if (value === null) {
-      Cookie.remove(key);
-    } else {
-      Cookie.set(key, value, opts);
-    }
-  }
-*/
-/**
- * Cookieを利用したデータ保存。
- *
- */
-var MAX_LISTS = 7;
-var COOKIE_NAME  = "AzBatteryLog_Text";
-var COOKIE_VALUE = "AzBatteryLog_Value";
-var COOKIE_LAST_VALUE = "AzBatteryLog_LastValue";
-var COOKIE_OPTIONS = {expires: 7};
-var _loadItems = function(){
-	var cookie = window.Cookie;
-	var list = [];
-	var name, value, n = MAX_LISTS;
-	while( 0 < n-- ){
-		name = cookie( COOKIE_NAME + n );
-		value = cookie( COOKIE_VALUE + n );
-		if( name && value ){
-			list.push({
-				"text" : name,
-				"value" : value
-			});
-		}
-	}
-	return list;
-};
-var _saveItems = function( list ){
-	var cookie = window.Cookie;
-	var name, value, n = MAX_LISTS;
-	while( 0 < n-- ){
-		if( list[n] && list[n].text && list[n].value ){
-			name = cookie( COOKIE_NAME + n, list[n].text, COOKIE_OPTIONS );
-			value = cookie( COOKIE_VALUE + n, list[n].value, COOKIE_OPTIONS );
-		}
-	}
-};
-var _loadLastValue = function(){
-	var cookie = window.Cookie;
-	return cookie(COOKIE_LAST_VALUE);
-};
-var _saveLastValue = function( value ){
-	var cookie = window.Cookie;
-	cookie(COOKIE_LAST_VALUE, value, COOKIE_OPTIONS);
-};
-var _loadAzureDomain = function(){
-	var cookie = window.Cookie;
-	return cookie("AzBatteryLog_Domain");
-}
-var _saveAzureDomain = function( azureStr ){
-	var cookie = window.Cookie;
-	cookie("AzBatteryLog_Domain", azureStr, COOKIE_OPTIONS );
-};
-
-
-
-
-
-
 
 // ----------------------------------------------------------------------
+var Factory; // 複数ファイルでの重複宣言、ブラウザ環境では「後から読み込んだ方で上書きされる」でOKのはず。。。
+var Factory4Require;
+if( !this.window ){ // Node.js環境のとき、以下を実行する。
+	Factory = require("./factory4require_compatible_browser.js").Factory;
+	Factory4Require = require("./factory4require_compatible_browser.js").Factory4Require;
+}
 var factoryImpl = { // require()を使う代わりに、new Factory() する。
 	"createVue" : new Factory(function(options){
 		return new Vue(options)
 	}), // Vue.jsが無ければ、undefined が設定されるだけ。
-	"cookieData" : new Factory({
+	"cookieData" : this.window ? new Factory({
 		"loadItems" : _loadItems,
 		"saveItems" : _saveItems,
 		"loadLastValue" : _loadLastValue,
 		"saveLastValue" : _saveLastValue,
 		"loadAzureDomain" : _loadAzureDomain,
 		"saveAzureDomain" : _saveAzureDomain
-	}),
+	}) : new Factory4Require("./cookie_io.js"), // ブラウザ環境は外部ファイル無いの変数もグローバル。nodejs環境はrequire()経由。
+	"file": this.window ? new Factory({
+		"loadConfigFile" : _loadConfigFile
+	}) : new Factory4Require("./file_io.js"), // ブラウザ環境は～（以下略）。
 	"action" : new Factory({
 		"addSelecterIfUnique" : _addSelecterIfUnique,
 		"showItemOnInputer" : _showItemOnInputer,
@@ -211,10 +144,7 @@ var factoryImpl = { // require()を使う代わりに、new Factory() する。
 	})
 };
 // UTデバッグ用のHookポイント。運用では外部公開しないメソッドはこっちにまとめる。
-if( !this.window ){
+if( !this.window ){ // Node.js環境のとき、以下を外部公開する。
 	exports.factoryImpl = factoryImpl;
 	exports.Factory = Factory;
 }
-
-
-
