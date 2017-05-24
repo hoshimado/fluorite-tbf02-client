@@ -49,7 +49,7 @@ Temporary Items
 # Directories of npm 
 node_modules
 coverage
-backup_jquery_version
+backup_*
 
 # Local bat file
 *.LOG
